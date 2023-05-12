@@ -7,6 +7,10 @@ Here is a link to the MFOS project.
 
 http://musicfromouterspace.com/analogsynth_new/PHASESHIFTER2007/PHASESHIFTER2007.php
 
+Youtube link to how it sounds
+
+https://youtu.be/nFwL_rfyhII
+
 I wanted to add this phaser to my programmable Crumar Trilogy to phase the strings and also make the phaser programmmable. So I set out firstly to make the Phaser CV controlled.
 
 Easiest way was to replace the LFO section of the MFOS with an Electric Druid TapLFO3D based LFO which can be CV controlled for rate, level, waveform and many other options, but I only chose the fist 3.
