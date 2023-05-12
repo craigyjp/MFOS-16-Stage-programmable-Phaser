@@ -44,6 +44,6 @@ If you build this then remember you do not need to build the LFO section of the 
 
 # Issues
 
-* MIDI Clock doesn't work as it should, I suspect the Teensy 2++ is overloaded to cope with fast clocks, external clock should be unaffected by this.
+* MIDI Clock only works between 15 - 60 BPM
 
 
