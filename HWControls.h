@@ -17,8 +17,8 @@
 #define MUXA1_OUT 14
 
 #define RECALL_SW 10
-#define ENCODER_PINA 4
-#define ENCODER_PINB 5
+#define ENCODER_PINA 18
+#define ENCODER_PINB 19
 
 #define SDCARD 20
 #define DAC_CS1 11
