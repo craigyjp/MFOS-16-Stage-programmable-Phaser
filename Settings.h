@@ -39,10 +39,10 @@ void settingsEncoderDir(char * value) {
 }
 
 void settingsClockSource(char *value) {
-  if (strcmp(value, "Internal") == 0) ClockSource = 0;
-  if (strcmp(value, "External") == 0) ClockSource = 1;
-  if (strcmp(value, "MIDI Clk") == 0) ClockSource = 2;
-  storeClockSource(ClockSource);
+  if (strcmp(value, "Internal") == 0) clocksource = 0;
+  if (strcmp(value, "External") == 0) clocksource = 1;
+  if (strcmp(value, "MIDI Clk") == 0) clocksource = 2;
+  storeClockSource(clocksource);
 }
 
 

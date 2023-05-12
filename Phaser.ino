@@ -35,18 +35,14 @@ boolean cardStatus = false;
 
 unsigned long buttonDebounce = 0;
 
-
-byte oldClockSource;
-
 //MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);  //RX - Pin 0
 
 void setup() {
-  Serial.begin(9600);
+
   SPI.begin();
-  SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // OLED I2C Address, may need to change for different device,
-  //setupDisplay();
   setUpSettings();
 
   setupHardware();
@@ -54,7 +50,7 @@ void setup() {
 
   cardStatus = SD.begin(SDCARD);
   if (cardStatus) {
-    Serial.println("SD card is connected");
+
     //Get patch numbers and names from SD card
     loadPatches();
     if (patches.size() == 0) {
@@ -63,7 +59,6 @@ void setup() {
       loadPatches();
     }
   } else {
-    Serial.println("SD card is not connected or unusable");
 
     reinitialiseToPanel();
     showPatchPage("No SD", "conn'd / usable");
@@ -71,25 +66,37 @@ void setup() {
 
   //Read MIDI Channel from EEPROM
 
-  // midiChannel = getMIDIChannel();
-  // if (midiChannel < 0 || midiChannel > 15) {
-  //   storeMidiChannel(0);
-  // }
+  midiChannel = getMIDIChannel();
+  if (midiChannel < 0 || midiChannel > 16) {
+    storeMidiChannel(0);
+  }
 
   //MIDI 5 Pin DIN
   MIDI.begin();
   MIDI.setHandleControlChange(myConvertControlChange);
   MIDI.setHandleProgramChange(myProgramChange);
   MIDI.setHandleClock(myMIDIclock);
-  MIDI.setHandleStart(myMIDIClockStart);
-  MIDI.setHandleStop(myMIDIClockStop);
 
   // Read ClockSource from EEPROM
 
-  ClockSource = getClockSource();
-  if (ClockSource < 0 || ClockSource > 2) {
+  clocksource = getClockSource();
+  if (clocksource < 0 || clocksource > 2) {
     storeClockSource(0);
   }
+  switch (clocksource) {
+    case 0:
+      digitalWrite(MIDICLOCK_SELECT, LOW);
+      break;
+
+    case 1:
+      digitalWrite(MIDICLOCK_SELECT, LOW);
+      break;
+
+    case 2:
+      digitalWrite(MIDICLOCK_SELECT, HIGH);
+      break;
+  }
+  oldclocksource = clocksource;
 
   //Read Encoder Direction from EEPROM
   encCW = getEncoderDir();
@@ -98,9 +105,8 @@ void setup() {
   updateScreen();
 }
 
-void startFirstTimer()
-{
-    firsttimer = millis();
+void startFirstTimer() {
+  firsttimer = millis();
 }
 
 void MCP4922_write(const int &slavePin, const int &value1, const int &value2) {
@@ -144,15 +150,12 @@ void myProgramChange(byte channel, byte program) {
   patchNo = program + 1;
   recallPatch(patchNo);
   updateScreen();
-  Serial.print("MIDI Pgm Change:");
-  Serial.println(patchNo);
   state = PARAMETER;
 }
 
 void recallPatch(int patchNo) {
   File patchFile = SD.open(String(patchNo).c_str());
   if (!patchFile) {
-    Serial.println("File not found");
   } else {
     String data[NO_OF_PARAMS];  //Array of data read in
     recallPatchData(patchFile, data);
@@ -175,14 +178,10 @@ void setCurrentPatchData(String data[]) {
 
   //Switches
   updatestage(0);
-
-
+  
   //Patchname
   updatePatchname();
 
-
-  Serial.print("Set Patch: ");
-  Serial.println(patchName);
 }
 
 String getCurrentPatchData() {
@@ -195,26 +194,25 @@ void updatePatchname() {
 
 void myMIDIclock() {
 
-  // if (millis() > clock_timeout + 300) clock_count = 0;  // Prevents Clock from starting in between quarter notes after clock is restarted!
-  // clock_timeout = millis();
+  if (millis() > clock_timeout + 300) clock_count = 0;  // Prevents Clock from starting in between quarter notes after clock is restarted!
+  clock_timeout = millis();
 
-  // if (clock_count == 0) {
-  //   digitalWrite(CLOCK, HIGH);  // Start clock pulse
-  //   clock_timer = millis();
-  // }
-  // clock_count++;
+  if (clock_count == 0) {
+    digitalWrite(CLOCK_OUT, HIGH);  // Start clock pulse
+    clock_timer = millis();
+  }
+  clock_count++;
 
-  // if (clock_count == 24) {  // MIDI timing clock sends 24 pulses per quarter note.  Sent pulse only once every 24 pulses
-  //   clock_count = 0;
-  // }
+  if (clock_count == 24) {  // MIDI timing clock sends 24 pulses per quarter note.  Sent pulse only once every 24 pulses
+    clock_count = 0;
+  }
 }
 
-void myMIDIClockStart() {
-  // MIDIClkSignal = true;
-}
-
-void myMIDIClockStop() {
-  // MIDIClkSignal = false;
+void stopClockPulse() {
+  if ((clock_timer > 0) && (millis() - clock_timer > 20)) {
+    digitalWrite(CLOCK_OUT, LOW);  // Set clock pulse low after 20 msec
+    clock_timer = 0;
+  }
 }
 
 void updateLfoRate(boolean announce) {
@@ -438,44 +436,44 @@ void checkSwitches() {
   Stage4_Switch.update();
   if (Stage4_Switch.numClicks() == 1) {
     if (!stage4) {
-    stage4 = 1;
-    stage8 = 0;
-    stage12 = 0;
-    stage16 = 0;
-    myControlChange(midiChannel, CCstage4, stage4);
+      stage4 = 1;
+      stage8 = 0;
+      stage12 = 0;
+      stage16 = 0;
+      myControlChange(midiChannel, CCstage4, stage4);
     }
   }
 
   Stage8_Switch.update();
   if (Stage8_Switch.numClicks() == 1) {
     if (!stage8) {
-    stage4 = 0;
-    stage8 = 1;
-    stage12 = 0;
-    stage16 = 0;
-    myControlChange(midiChannel, CCstage8, stage8);
+      stage4 = 0;
+      stage8 = 1;
+      stage12 = 0;
+      stage16 = 0;
+      myControlChange(midiChannel, CCstage8, stage8);
     }
   }
 
   Stage12_Switch.update();
   if (Stage12_Switch.numClicks() == 1) {
     if (!stage12) {
-    stage4 = 0;
-    stage8 = 0;
-    stage12 = 1;
-    stage16 = 0;
-    myControlChange(midiChannel, CCstage12, stage12);
+      stage4 = 0;
+      stage8 = 0;
+      stage12 = 1;
+      stage16 = 0;
+      myControlChange(midiChannel, CCstage12, stage12);
     }
   }
 
   Stage16_Switch.update();
   if (Stage16_Switch.numClicks() == 1) {
     if (!stage16) {
-    stage4 = 0;
-    stage8 = 0;
-    stage12 = 0;
-    stage16 = 1;
-    myControlChange(midiChannel, CCstage16, stage16);
+      stage4 = 0;
+      stage8 = 0;
+      stage12 = 0;
+      stage16 = 1;
+      myControlChange(midiChannel, CCstage16, stage16);
     }
   }
 
@@ -489,41 +487,41 @@ void checkSwitches() {
         break;
     }
   } else if (saveButton.numClicks() == 1) {
-      switch (state) {
-        case PARAMETER:
-          if (patches.size() < PATCHES_LIMIT) {
-            resetPatchesOrdering();  //Reset order of patches from first patch
-            patches.push({ patches.size() + 1, INITPATCHNAME });
-            state = SAVE;
-          }
-          updateScreen();
-          break;
-        case SAVE:
-          //Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
-          patchName = patches.last().patchName;
-          state = PATCH;
-          savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-          showPatchPage(patches.last().patchNo, patches.last().patchName);
-          patchNo = patches.last().patchNo;
-          loadPatches();  //Get rid of pushed patch if it wasn't saved
-          setPatchesOrdering(patchNo);
-          renamedPatch = "";
-          state = PARAMETER;
-          updateScreen();
-          break;
-        case PATCHNAMING:
-          if (renamedPatch.length() > 0) patchName = renamedPatch;  //Prevent empty strings
-          state = PATCH;
-          savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-          showPatchPage(patches.last().patchNo, patchName);
-          patchNo = patches.last().patchNo;
-          loadPatches();  //Get rid of pushed patch if it wasn't saved
-          setPatchesOrdering(patchNo);
-          renamedPatch = "";
-          state = PARAMETER;
-          updateScreen();
-          break;
-      }
+    switch (state) {
+      case PARAMETER:
+        if (patches.size() < PATCHES_LIMIT) {
+          resetPatchesOrdering();  //Reset order of patches from first patch
+          patches.push({ patches.size() + 1, INITPATCHNAME });
+          state = SAVE;
+        }
+        updateScreen();
+        break;
+      case SAVE:
+        //Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
+        patchName = patches.last().patchName;
+        state = PATCH;
+        savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+        showPatchPage(patches.last().patchNo, patches.last().patchName);
+        patchNo = patches.last().patchNo;
+        loadPatches();  //Get rid of pushed patch if it wasn't saved
+        setPatchesOrdering(patchNo);
+        renamedPatch = "";
+        state = PARAMETER;
+        updateScreen();
+        break;
+      case PATCHNAMING:
+        if (renamedPatch.length() > 0) patchName = renamedPatch;  //Prevent empty strings
+        state = PATCH;
+        savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+        showPatchPage(patches.last().patchNo, patchName);
+        patchNo = patches.last().patchNo;
+        loadPatches();  //Get rid of pushed patch if it wasn't saved
+        setPatchesOrdering(patchNo);
+        renamedPatch = "";
+        state = PARAMETER;
+        updateScreen();
+        break;
+    }
   }
 
   settingsButton.update();
@@ -532,71 +530,71 @@ void checkSwitches() {
     //Reinitialise all hardware values to force them to be re-read if different
     state = REINITIALISE;
     reinitialiseToPanel();
-    updateScreen();                          //Hack
-  } else if (settingsButton.numClicks() == 1)  {
-      switch (state) {
-        case PARAMETER:
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          updateScreen();
-          break;
-        case SETTINGS:
-          settingsOptions.push(settingsOptions.shift());
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          //updateScreen();
-        case SETTINGSVALUE:
-          //Same as pushing Recall - store current settings item and go back to options
-          settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          updateScreen();
-          break;
-      }
+    updateScreen();  //Hack
+  } else if (settingsButton.numClicks() == 1) {
+    switch (state) {
+      case PARAMETER:
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        updateScreen();
+        break;
+      case SETTINGS:
+        settingsOptions.push(settingsOptions.shift());
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        //updateScreen();
+      case SETTINGSVALUE:
+        //Same as pushing Recall - store current settings item and go back to options
+        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        updateScreen();
+        break;
+    }
   }
 
   backButton.update();
   if (backButton.held()) {
     //If Back button held, Panic - all notes off
-    updateScreen();                      //Hack
-  } else if (backButton.numClicks() == 1)  {
-      switch (state) {
-        case RECALL:
-          setPatchesOrdering(patchNo);
-          state = PARAMETER;
-          updateScreen();
-          break;
-        case SAVE:
-          renamedPatch = "";
-          state = PARAMETER;
-          loadPatches();  //Remove patch that was to be saved
-          setPatchesOrdering(patchNo);
-          updateScreen();
-          break;
-        case PATCHNAMING:
-          charIndex = 0;
-          renamedPatch = "";
-          state = SAVE;
-          updateScreen();
-          break;
-        case DELETE:
-          setPatchesOrdering(patchNo);
-          state = PARAMETER;
-          updateScreen();
-          break;
-        case SETTINGS:
-          state = PARAMETER;
-          updateScreen();
-          break;
+    updateScreen();  //Hack
+  } else if (backButton.numClicks() == 1) {
+    switch (state) {
+      case RECALL:
+        setPatchesOrdering(patchNo);
+        state = PARAMETER;
+        updateScreen();
+        break;
+      case SAVE:
+        renamedPatch = "";
+        state = PARAMETER;
+        loadPatches();  //Remove patch that was to be saved
+        setPatchesOrdering(patchNo);
+        updateScreen();
+        break;
+      case PATCHNAMING:
+        charIndex = 0;
+        renamedPatch = "";
+        state = SAVE;
+        updateScreen();
+        break;
+      case DELETE:
+        setPatchesOrdering(patchNo);
+        state = PARAMETER;
+        updateScreen();
+        break;
+      case SETTINGS:
+        state = PARAMETER;
+        updateScreen();
+        break;
 
-        case SETTINGSVALUE:
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          updateScreen();
-          break;
-      }
+      case SETTINGSVALUE:
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        updateScreen();
+        break;
+    }
   }
 
   //Encoder switch
@@ -611,66 +609,66 @@ void checkSwitches() {
     state = PARAMETER;
     updateScreen();  //Hack
   } else if (recallButton.numClicks() == 1) {
-      switch (state) {
-        case PARAMETER:
-          state = RECALL;  //show patch list
-          updateScreen();
-          break;
-        case RECALL:
-          state = PATCH;
-          //Recall the current patch
-          patchNo = patches.first().patchNo;
-          recallPatch(patchNo);
-          state = PARAMETER;
-          updateScreen();
-          break;
-        case SAVE:
-          showRenamingPage(patches.last().patchName);
-          patchName = patches.last().patchName;
-          state = PATCHNAMING;
-          updateScreen();
-          break;
-        case PATCHNAMING:
-          if (renamedPatch.length() < 12)  //actually 12 chars
-          {
-            renamedPatch.concat(String(currentCharacter));
-            charIndex = 0;
-            currentCharacter = CHARACTERS[charIndex];
-            showRenamingPage(renamedPatch);
-          }
-          updateScreen();
-          break;
-        case DELETE:
-          //Don't delete final patch
-          if (patches.size() > 1) {
-            state = DELETEMSG;
-            patchNo = patches.first().patchNo;     //PatchNo to delete from SD card
-            patches.shift();                       //Remove patch from circular buffer
-            deletePatch(String(patchNo).c_str());  //Delete from SD card
-            loadPatches();                         //Repopulate circular buffer to start from lowest Patch No
-            renumberPatchesOnSD();
-            loadPatches();                      //Repopulate circular buffer again after delete
-            patchNo = patches.first().patchNo;  //Go back to 1
-            recallPatch(patchNo);               //Load first patch
-          }
-          state = PARAMETER;
-          updateScreen();
-          break;
-        case SETTINGS:
-          //Choose this option and allow value choice
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGSVALUE);
-          state = SETTINGSVALUE;
-          updateScreen();
-          break;
-        case SETTINGSVALUE:
-          //Store current settings item and go back to options
-          settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          updateScreen();
-          break;
-      }
+    switch (state) {
+      case PARAMETER:
+        state = RECALL;  //show patch list
+        updateScreen();
+        break;
+      case RECALL:
+        state = PATCH;
+        //Recall the current patch
+        patchNo = patches.first().patchNo;
+        recallPatch(patchNo);
+        state = PARAMETER;
+        updateScreen();
+        break;
+      case SAVE:
+        showRenamingPage(patches.last().patchName);
+        patchName = patches.last().patchName;
+        state = PATCHNAMING;
+        updateScreen();
+        break;
+      case PATCHNAMING:
+        if (renamedPatch.length() < 12)  //actually 12 chars
+        {
+          renamedPatch.concat(String(currentCharacter));
+          charIndex = 0;
+          currentCharacter = CHARACTERS[charIndex];
+          showRenamingPage(renamedPatch);
+        }
+        updateScreen();
+        break;
+      case DELETE:
+        //Don't delete final patch
+        if (patches.size() > 1) {
+          state = DELETEMSG;
+          patchNo = patches.first().patchNo;     //PatchNo to delete from SD card
+          patches.shift();                       //Remove patch from circular buffer
+          deletePatch(String(patchNo).c_str());  //Delete from SD card
+          loadPatches();                         //Repopulate circular buffer to start from lowest Patch No
+          renumberPatchesOnSD();
+          loadPatches();                      //Repopulate circular buffer again after delete
+          patchNo = patches.first().patchNo;  //Go back to 1
+          recallPatch(patchNo);               //Load first patch
+        }
+        state = PARAMETER;
+        updateScreen();
+        break;
+      case SETTINGS:
+        //Choose this option and allow value choice
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGSVALUE);
+        state = SETTINGSVALUE;
+        updateScreen();
+        break;
+      case SETTINGSVALUE:
+        //Store current settings item and go back to options
+        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        updateScreen();
+        break;
+    }
   }
 }
 
@@ -767,6 +765,7 @@ void checkEncoder() {
 
 void loop() {
   updateScreen();
+  stopClockPulse();
   checkSwitches();
   checkEncoder();
   checkForChanges();
@@ -777,24 +776,20 @@ void loop() {
 
 void checkForChanges() {
 
-
-  if (ClockSource != oldClockSource) {
-    switch (ClockSource) {
+  if (clocksource != oldclocksource) {
+    switch (clocksource) {
       case 0:
-        // sr.set(EXTCLOCK, LOW);
-        // sr.set(MIDICLOCK, LOW);
+        digitalWrite(MIDICLOCK_SELECT, LOW);
         break;
 
       case 1:
-        // sr.set(EXTCLOCK, HIGH);
-        // sr.set(MIDICLOCK, LOW);
+        digitalWrite(MIDICLOCK_SELECT, LOW);
         break;
 
       case 2:
-        // sr.set(EXTCLOCK, LOW);
-        // sr.set(MIDICLOCK, HIGH);
+        digitalWrite(MIDICLOCK_SELECT, HIGH);
         break;
     }
-    oldClockSource = ClockSource;
+    oldclocksource = clocksource;
   }
 }

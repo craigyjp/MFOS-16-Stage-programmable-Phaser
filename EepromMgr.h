@@ -27,13 +27,13 @@ void storeEncoderDir(byte encoderDir)
 }
 
 float getClockSource() {
-  byte ClockSource = EEPROM.read(EEPROM_CLOCKSOURCE);
-  if (ClockSource < 0  || ClockSource > 2) return 0;
-  return ClockSource;
+  byte clocksource = EEPROM.read(EEPROM_CLOCKSOURCE);
+  if (clocksource < 0  || clocksource > 2) return 0;
+  return clocksource;
 }
 
-void storeClockSource(byte ClockSource)
+void storeClockSource(byte clocksource)
 {
-  EEPROM.update(EEPROM_CLOCKSOURCE, ClockSource);
+  EEPROM.update(EEPROM_CLOCKSOURCE, clocksource);
 }
 

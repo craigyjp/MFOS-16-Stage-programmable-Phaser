@@ -20,6 +20,11 @@ const char* VERSION = "Version 1.1";
 
 // Parameters
 
+static unsigned long clock_timer = 0, clock_timeout = 0;
+static unsigned int clock_count = 0;
+int clocksource = 0;
+int oldclocksource = 0;
+
 int Patchnumber = 0;
 unsigned long timeout = 0;
 unsigned long firsttimer = 0;
@@ -28,7 +33,7 @@ String patchName = INITPATCHNAME;
 boolean encCW = true;//This is to set the encoder to increment when turned CW - Settings Option
 
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
-byte midiChannel = 1;//(EEPROM)
+byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
 boolean announce = false;
 
 String StratusLFOWaveform = "                ";
@@ -49,7 +54,6 @@ boolean stage8 = 0;
 boolean stage12 = 0;
 boolean stage16 = 0;
 
-int ClockSource = 0;
 int DAC0 = 0;
 int DAC1 = 0;
 

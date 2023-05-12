@@ -69,7 +69,7 @@ TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION
 TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
                         
-Encoder encoder(ENCODER_PINA, ENCODER_PINB);        //This often needs the pins swapping depending on the encoder
+Encoder encoder(ENCODER_PINB, ENCODER_PINA);        //This often needs the pins swapping depending on the encoder
 
 void setupHardware() {
 
@@ -124,6 +124,6 @@ void setupHardware() {
   pinMode(MIDICLOCK_SELECT, OUTPUT);
   pinMode(CLOCK_OUT, OUTPUT);
   digitalWrite(MIDICLOCK_SELECT, LOW);
-  digitalWrite(CLOCK_OUT, LOW);
+  digitalWrite(CLOCK_OUT, HIGH);
 
 }
