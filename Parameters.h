@@ -7,7 +7,7 @@ const char* INITPATCHNAME = "Initial Patch";
 const uint32_t CLICK_DURATION = 250;
 #define PATCHES_LIMIT 128
 const String INITPATCH = "Solina,1,1,1,1,1,1,1,1,1,1,1";
-const char* VERSION = "V1.1";
+const char* VERSION = "Version 1.1";
 
 #define   CCLfoRate 9
 #define   CCLfoDepth 10

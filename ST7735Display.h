@@ -1,12 +1,9 @@
 #define DISPLAYTIMEOUT 1500
 
 #include <Fonts/Org_01.h>
-#include "Yeysk16pt7b.h"
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSansOblique24pt7b.h>
-#include <Fonts/FreeSansBoldOblique24pt7b.h>
 
 #define OLED_RESET 7      // Reset pin # (or -1 if sharing Arduino reset pin
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -39,29 +36,29 @@ void startTimer()
 void renderBootUpPage() {
   startTimer();
   display.clearDisplay();
-  display.setTextColor(WHITE, BLACK);
-  display.drawRect(5, 30, 46, 11, WHITE);
-  display.fillRect(51, 30, 76, 11, WHITE);
-  display.setCursor(10, 32);
   display.setFont(&Org_01);
+  display.setTextColor(WHITE, BLACK);
+  display.drawRect(5, 15, 35, 15, WHITE);
+  display.fillRect(40, 15, 87, 15, WHITE);
+  display.setCursor(10, 24);
   display.setTextSize(1);
   display.setTextColor(WHITE, BLACK);
   display.print("MFOS");
-  display.setCursor(55, 32);
+  display.setCursor(48, 24);
   display.setTextColor(BLACK, WHITE);
-  display.print("PHASER");
+  display.print("16 STG PHASER");
   display.setTextColor(WHITE, BLACK);
-  display.drawRect(5, 45, 68, 11, WHITE);
-  display.fillRect(73, 45, 54, 11, WHITE);
-  display.setCursor(10, 47);
+  display.drawRect(5, 45, 72, 15, WHITE);
+  display.fillRect(77, 45, 54, 15, WHITE);
+  display.setCursor(10, 55);
   display.setTextSize(1);
   display.print("Craig Barnes");
-  display.setCursor(84, 47);
+  display.setCursor(80, 55);
   display.setTextColor(BLACK, WHITE);
   display.print(VERSION);
   display.display();
   delay(2000);
-  display.fillScreen(SSD1306_BLACK);
+  display.fillScreen(BLACK);
   display.display();
 }
 
