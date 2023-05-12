@@ -17,6 +17,8 @@ To select the stages I used the MAX308 mux chip and using 5v logic like in a 405
 
 Finally I used a 4053 to switch between external clock or MIDI clock for the LFO, it will free run until any of these are applied and selected.
 
+Once it was all under CV control it was fairly straight forward to add a Teensy based controller and a couple of DACs to generate the 4 CV's and digital signals required to control the routing. I used a Teensy 2++ as that had enough I/O without the need for shift registers etc and I had a few spare laying around, the Teensy 2 did not have enough memory for the program and the T3.5 or 6 was overkill.
+
 # Specifications are as follows
 
 * 16 Stage phasing using LM13700 OTA
