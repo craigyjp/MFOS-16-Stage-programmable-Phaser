@@ -23,6 +23,8 @@ Finally I used a 4053 to switch between external clock or MIDI clock for the LFO
 
 Once it was all under CV control it was fairly straight forward to add a Teensy based controller and a couple of DACs to generate the 4 CV's and digital signals required to control the routing. I used a Teensy 2++ as that had enough I/O without the need for shift registers etc and I had a few spare laying around, the Teensy 2 did not have enough memory for the program and the T3.5 or 6 was overkill.
 
+If you build this then remember you do not need to build the LFO section of the MFOS phaser (around U2-A and U2-B) and the pot R10 as those have been replaced by the Taplfo3D LFO in my design. Also if you want 8 stages instead of 16 then just omit the two switches for stages 12 and 16 and it should work as is without any code modifications as switches stage12 and stage16 will never get activated.
+
 # Specifications are as follows
 
 * 16 Stage phasing using LM13700 OTA
