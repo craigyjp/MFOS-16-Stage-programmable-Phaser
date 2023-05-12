@@ -38,6 +38,7 @@ If you build this then remember you do not need to build the LFO section of the 
 * External or MIDI clock selection
 * Program Change and CC enabled over MIDI
 * External clock input 0-5V
+* External Modulation input +/- 10v
 * 128 Patch Memories with Patch naming
 * MIDI in/Thru
 
