@@ -3,7 +3,7 @@ An update of the MFOS 8 Stage phaser to 16 stages plus a programmer interface to
 
 I built the MFOS 8 stage phaser and added another 8 stages to it, simple enough to replicate the extra 8 stages.
 
-![Phaser](photos/phaser.jpg)
+![Phaser](Photos/phaser.jpg)
 
 Here is a link to the MFOS project.
 
